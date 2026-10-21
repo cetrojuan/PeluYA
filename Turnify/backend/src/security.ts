@@ -1,0 +1,11 @@
+import {z} from 'zod';
+export const password=z.string().min(12,'Usá al menos 12 caracteres').max(72).regex(/[a-z]/,'Incluí minúsculas').regex(/[A-Z]/,'Incluí mayúsculas').regex(/[0-9]/,'Incluí un número').refine(s=>Buffer.byteLength(s,'utf8')<=72,'La contraseña es demasiado larga en UTF-8');
+export const text=(max=120)=>z.string().trim().max(max);
+export const profile=z.object({name:text().min(2),email:z.email().max(254).transform(v=>v.toLowerCase()),phone:text(30).regex(/^[+\d ()-]*$/),reminderPreference:z.enum(['NONE','EMAIL','WHATSAPP','BOTH'])}).strict();
+export const registration=profile.omit({reminderPreference:true}).extend({password,role:z.enum(['CLIENT','PROFESSIONAL'])}).strict();
+export const service=z.object({name:text().min(2),description:text(1000),duration:z.number().int().min(5).max(480),price:z.number().min(0).max(100000000)}).strict();
+export const time=z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
+export const minutes=(s:string)=>Number(s.slice(0,2))*60+Number(s.slice(3));
+export const overlaps=(a:string,b:string,c:string,d:string)=>a<d&&b>c;
+export const availability=z.object({dayOfWeek:z.number().int().min(0).max(6),startTime:time,endTime:time}).strict().refine(v=>v.endTime>v.startTime,'El fin debe ser posterior al inicio');
+export const business=z.object({businessName:text().min(2),category:text(60).min(2),description:text(2000),address:text(250),paymentMethods:z.array(z.enum(['Efectivo','Transferencia','Tarjeta','Mercado Pago'])).min(1).max(4),paymentAlias:text(100),paymentCBU:z.string().regex(/^(\d{22})?$/,'CBU/CVU: 22 dígitos'),paymentHolder:text(),paymentInstructions:text(1000)}).strict().refine(v=>!v.paymentMethods.includes('Transferencia')||!!((v.paymentAlias||v.paymentCBU)&&v.paymentHolder),'Para transferencia indicá titular y alias o CBU/CVU');
