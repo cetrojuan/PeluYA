@@ -5,7 +5,7 @@
     "dev": "node --import tsx --watch src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
-    "db:push": "node scripts/init-db.mjs && prisma db push",
+    "db:push": "prisma db push",
     "db:seed": "node --import tsx prisma/seed.ts",
     "test": "node --import tsx --test src/security.test.ts",
     "db:generate": "prisma generate"
@@ -19,7 +19,6 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "turnify-mvp": "file:..",
     "zod": "^4.1.8"
   },
   "devDependencies": {
