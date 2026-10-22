@@ -3,12 +3,13 @@
   "type": "module",
   "scripts": {
     "dev": "node --import tsx --watch src/server.ts",
-    "build": "tsc",
+    "build": "tsc && tsc-alias",
     "start": "node dist/src/server.js",
-    "db:push": "node scripts/init-db.mjs && prisma db push",
+    "db:push": "prisma db push",
     "db:seed": "node --import tsx prisma/seed.ts",
-    "test": "node --import tsx --test src/security.test.ts",
-    "db:generate": "prisma generate"
+    "test": "node --import tsx --test src/**/*.test.ts",
+    "db:generate": "prisma generate",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",
@@ -19,7 +20,6 @@
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "turnify-mvp": "file:..",
     "zod": "^4.1.8"
   },
   "devDependencies": {
@@ -30,6 +30,7 @@
     "@types/node": "^24.5.2",
     "prisma": "^6.16.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "tsc-alias": "^1.8.16"
   }
 }
