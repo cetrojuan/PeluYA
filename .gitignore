@@ -1,6 +1,7 @@
 # Dependencias y builds
 node_modules/
 dist/
+*.tsbuildinfo
 
 # Configuración local (cada uno tiene la suya; ver .env.example)
 .env
