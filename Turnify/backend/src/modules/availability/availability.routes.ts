@@ -7,4 +7,4 @@ availabilityRouter.use(requireAuth, requireProfessional);
 
 availabilityRouter.post('/', availabilityController.create);
 availabilityRouter.delete('/:id', availabilityController.remove);
-// TODO (Sebas): availabilityRouter.put('/:id', availabilityController.update);
+availabilityRouter.put('/:id', availabilityController.update);
