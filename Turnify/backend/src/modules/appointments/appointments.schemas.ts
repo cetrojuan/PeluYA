@@ -18,3 +18,9 @@ export const rescheduleSchema = z.object({ date: isoDate, startTime: time, notes
 export const updateStatusSchema = z
   .object({ status: z.enum(['CONFIRMED', 'CANCELLED', 'COMPLETED']) })
   .strict();
+
+export const slotsQuerySchema = z.object({
+  date: isoDate,
+  serviceId: z.string().min(1),
+}).strict();
+export type SlotsQuery = z.infer<typeof slotsQuerySchema>;
