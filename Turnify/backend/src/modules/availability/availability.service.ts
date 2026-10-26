@@ -4,11 +4,6 @@ import { overlaps } from '@/lib/time.js';
 import { getMyProfileOrFail } from '@/modules/professionals/professionals.service.js';
 import type { AvailabilityInput } from './availability.schemas.js';
 
-// TODO (Sebas): agregar `update(userId, id, input)` para PUT /availability/:id.
-//  Misma receta que `create`: dentro de una transacción Serializable, traer las otras franjas
-//  de ese día (excluyendo la que se edita) y frenar con conflict(...) si se superponen.
-//  Ver la guía de tareas de Sebas en el README de backend.
-
 /** Agrega una franja de atención si no se superpone con otra del mismo día. */
 export async function create(userId: string, input: AvailabilityInput) {
   const profile = await getMyProfileOrFail(userId);
@@ -30,4 +25,31 @@ export async function remove(userId: string, id: string) {
   const profile = await getMyProfileOrFail(userId);
   const result = await prisma.availability.deleteMany({ where: { id, professionalId: profile.id } });
   if (!result.count) throw notFound('Horario no encontrado', 'AVAILABILITY_NOT_FOUND');
+}
+
+/** Edita una franja de atención, verificando que sea del profesional y que no se superponga */
+export async function update(userId: string, id: string, input: AvailabilityInput) {
+  const profile = await getMyProfileOrFail(userId);
+  return prisma.$transaction(
+    async (tx) => {
+      // Verifica que la franja exista y sea del profesional logueado
+      const existing = await tx.availability.findFirst({
+        where: { id, professionalId: profile.id },
+      });
+      if (!existing) throw notFound('Horario no encontrado', 'AVAILABILITY_NOT_FOUND');
+
+      // Busca otras franjas del mismo día, excluyendo la que se está editando
+      const sameDay = await tx.availability.findMany({
+        where: { professionalId: profile.id, dayOfWeek: input.dayOfWeek, id: { not: id } },
+      });
+
+      // Verifica que no se superponga con otra franja
+      if (sameDay.some((a) => overlaps(a.startTime, a.endTime, input.startTime, input.endTime))) {
+        throw conflict('Ese horario se superpone con otro', 'AVAILABILITY_OVERLAP');
+      }
+
+      return tx.availability.update({ where: { id }, data: input });
+    },
+    { isolationLevel: 'Serializable' },
+  );
 }

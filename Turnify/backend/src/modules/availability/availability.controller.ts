@@ -13,3 +13,9 @@ export async function remove(req: Request, res: Response) {
   await availabilityService.remove(req.user!.id, id);
   res.json({ ok: true });
 }
+
+export async function update(req: Request, res: Response) {
+  const { id } = idParam.parse(req.params);
+  const input = availabilitySchema.parse(req.body);
+  res.json(await availabilityService.update(req.user!.id, id, input));
+}
