@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 // Piezas de validación reutilizables por todos los módulos.
 export const text = (max = 120) => z.string().trim().max(max);
-export const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'La hora tiene que tener formato HH:mm');
-export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha tiene que tener formato AAAA-MM-DD');
+export const time = z.string({ required_error: 'La hora es obligatoria' }).regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'La hora tiene que tener formato HH:mm');
+export const isoDate = z.string({ required_error: 'La fecha es obligatoria' }).regex(/^\d{4}-\d{2}-\d{2}$/, 'La fecha tiene que tener formato AAAA-MM-DD');
 export const reminder = z.enum(['NONE', 'EMAIL', 'WHATSAPP', 'BOTH']);
 export const email = z.email().max(254).transform((value) => value.toLowerCase());
 

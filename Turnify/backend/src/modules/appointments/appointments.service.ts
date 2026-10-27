@@ -33,6 +33,7 @@ export function computeSlots(
 /** Devuelve los horarios de inicio libres para un profesional en una fecha dada */
 export async function getAvailableSlots(professionalId: string, date: string, serviceId: string) {
   const dbDate = dayToDb(date);
+  if (isNaN(+dbDate)) throw badRequest('Fecha inválida', 'INVALID_DATE');
   const dayOfWeek = dbDate.getUTCDay();
 
   // Verifica que el servicio sea de ese profesional y esté activo
@@ -44,6 +45,7 @@ export async function getAvailableSlots(professionalId: string, date: string, se
   // Busca las franjas horarias del profesional para ese día
   const windows = await prisma.availability.findMany({
     where: { professionalId, dayOfWeek },
+    orderBy: { startTime: 'asc' },
   });
   if (!windows.length) return { date, serviceId, duration: service.duration, slots: [] };
 
@@ -59,6 +61,12 @@ export async function getAvailableSlots(professionalId: string, date: string, se
 
   return { date, serviceId, duration: service.duration, slots };
 }
+
+/**
+ * Valida una reserva (nueva o reprogramada) y devuelve los datos listos para guardar.
+ * Corre dentro de una transacción Serializable, así dos personas no pueden tomar el mismo horario.
+ * `ignoreAppointmentId`: al reprogramar, el propio turno no cuenta como "ocupado".
+ */
 
 async function validateBooking(
   tx: Tx,
