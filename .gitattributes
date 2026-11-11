@@ -1,0 +1,6 @@
+# Finales de línea uniformes en el repo (Windows, Mac y Linux)
+* text=auto eol=lf
+# Los .bat de Windows necesitan CRLF o fallan los "goto"
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
