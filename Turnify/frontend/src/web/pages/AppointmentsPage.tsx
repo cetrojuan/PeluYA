@@ -5,6 +5,7 @@ import { Empty } from '@/web/components/Empty';
 import { Field } from '@/web/components/Field';
 import { StatusBadge } from '@/web/components/StatusBadge';
 import { readForm } from '@/web/utils/formData';
+import { Pagination } from '@/web/components/Pagination';
 
 type ViewModel = ReturnType<typeof useAppointmentsViewModel>;
 
@@ -28,12 +29,15 @@ export function AppointmentsPage() {
           ))}
         </select>
       </label>
+      {vm.loading && <p role="status">Cargando turnos...</p>}
+      {vm.error && <p role="alert">{vm.error}</p>}
       <div className="appointment-list">
         {vm.shown.map((a) => (
           <AppointmentCard key={a.id} appointment={a} vm={vm} />
         ))}
       </div>
-      {!vm.shown.length && <Empty text="No hay turnos con este estado." />}
+      {!vm.loading && !vm.error && !vm.shown.length && <Empty text="No hay turnos con este estado." />}
+      <Pagination result={vm.pagination} onChange={vm.setListPage} disabled={vm.pending || vm.loading} />
     </>
   );
 }

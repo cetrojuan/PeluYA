@@ -1,20 +1,23 @@
 import { useExploreViewModel } from '@/core/viewmodels';
 import { money } from '@/core/utils/format';
 import { Empty } from '@/web/components/Empty';
+import { Pagination } from '@/web/components/Pagination';
 
 export function ExplorePage() {
-  const { search, setSearch, results, choose, canBook } = useExploreViewModel();
+  const { search, setSearch, results, choose, canBook, loading, error, pagination, setListPage } = useExploreViewModel();
   return (
     <>
       <label className="search-label">
         Buscar por nombre o rubro
         <input
           value={search}
-          maxLength={120}
+          maxLength={100}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Barbería, salud, uñas…"
         />
       </label>
+      {loading && <p role="status">Buscando profesionales...</p>}
+      {error && <p role="alert">{error}</p>}
       <div className="professionals-grid">
         {results.map((p) => (
           <section className="panel professional-card" key={p.id}>
@@ -43,7 +46,8 @@ export function ExplorePage() {
           </section>
         ))}
       </div>
-      {!results.length && <Empty text="No encontramos profesionales con esa búsqueda." />}
+      {!loading && !error && !results.length && <Empty text="No encontramos profesionales con esa búsqueda." />}
+      <Pagination result={pagination} onChange={setListPage} disabled={loading} />
     </>
   );
 }

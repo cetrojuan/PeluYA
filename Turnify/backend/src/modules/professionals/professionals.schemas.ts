@@ -1,5 +1,12 @@
 import { z } from 'zod';
 import { text } from '@/lib/validation.js';
+import { paginationShape } from '@/lib/pagination.js';
+
+export const listProfessionalsSchema = z.object({
+  ...paginationShape,
+  q: z.string().trim().max(100).default(''),
+}).strict();
+export type ListProfessionalsQuery = z.infer<typeof listProfessionalsSchema>;
 
 export const PAYMENT_METHODS = ['Efectivo', 'Transferencia', 'Tarjeta', 'Mercado Pago'] as const;
 

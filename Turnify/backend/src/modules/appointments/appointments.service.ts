@@ -1,9 +1,10 @@
-import type { User } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 import { prisma, type Tx } from '@/lib/prisma.js';
 import { badRequest, conflict, forbidden, notFound } from '@/lib/errors.js';
 import { dayToDb, overlaps, toHHMM, toMinutes } from '@/lib/time.js';
-import { hasArrived } from '@/lib/clock.js';
-import type { CreateAppointmentInput } from './appointments.schemas.js';
+import { hasArrived, nowInAppTz } from '@/lib/clock.js';
+import { pageResult } from '@/lib/pagination.js';
+import type { CreateAppointmentInput, ListAppointmentsQuery } from './appointments.schemas.js';
 
 const MAX_DAYS_AHEAD = 366;
 const CLOSED_STATUSES = ['CANCELLED', 'COMPLETED'];
@@ -115,10 +116,7 @@ async function validateBooking(
 }
 
 /** El profesional ve los turnos que le reservaron; el cliente, los que reservó. */
-export function listMine(user: User) {
-  return prisma.appointment.findMany({
-    where: user.role === 'PROFESSIONAL' ? { professional: { userId: user.id } } : { clientId: user.id },
-    include: {
+const appointmentInclude = {
       service: true,
       client: { select: { name: true, email: true, phone: true } },
       professional: {
@@ -132,9 +130,37 @@ export function listMine(user: User) {
           paymentInstructions: true,
         },
       },
-    },
-    orderBy: { date: 'asc' },
-  });
+} satisfies Prisma.AppointmentInclude;
+
+// La identidad sale de la sesión; nunca se acepta clientId/professionalId del filtro.
+const ownAppointments = (user: User): Prisma.AppointmentWhereInput =>
+  user.role === 'PROFESSIONAL' ? { professional: { userId: user.id } } : { clientId: user.id };
+
+export async function listMine(user: User, query: ListAppointmentsQuery) {
+  const where = { ...ownAppointments(user), ...(query.status ? { status: query.status } : {}) };
+  const [total, items] = await prisma.$transaction([
+    prisma.appointment.count({ where }),
+    prisma.appointment.findMany({ where, include: appointmentInclude,
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }, { id: 'asc' }],
+      skip: (query.page - 1) * query.pageSize, take: query.pageSize }),
+  ], { isolationLevel: 'RepeatableRead' });
+  return pageResult(items, total, query);
+}
+
+// El resumen cuenta todos los turnos propios, independientemente de la página abierta.
+export async function summary(user: User) {
+  const where = ownAppointments(user);
+  const now = nowInAppTz();
+  const date = dayToDb(now.date);
+  const [active, pending, completed, upcoming] = await prisma.$transaction([
+    prisma.appointment.count({ where: { ...where, status: { in: ['PENDING', 'CONFIRMED'] } } }),
+    prisma.appointment.count({ where: { ...where, status: 'PENDING' } }),
+    prisma.appointment.count({ where: { ...where, status: 'COMPLETED' } }),
+    prisma.appointment.findMany({ where: { ...where, status: { in: ['PENDING', 'CONFIRMED'] },
+      OR: [{ date: { gt: date } }, { date, endTime: { gt: now.time } }] },
+      include: appointmentInclude, orderBy: [{ date: 'asc' }, { startTime: 'asc' }, { id: 'asc' }], take: 4 }),
+  ], { isolationLevel: 'RepeatableRead' });
+  return { active, pending, completed, upcoming };
 }
 
 export function create(clientId: string, input: CreateAppointmentInput) {

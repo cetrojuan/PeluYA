@@ -4,6 +4,21 @@ export type Role = 'CLIENT' | 'PROFESSIONAL';
 export type ReminderType = 'NONE' | 'EMAIL' | 'WHATSAPP' | 'BOTH';
 export type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 
+export interface Paginated<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface AppointmentSummary {
+  active: number;
+  pending: number;
+  completed: number;
+  upcoming: Appointment[];
+}
+
 export interface User {
   id: string;
   name: string;

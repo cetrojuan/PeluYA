@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { appointmentsApi, authApi, onSessionExpired, professionalsApi, profileApi, setCsrfToken } from '../api';
-import type { Appointment, Profile, PublicProfessional, SessionData, User } from '../models/types';
+import { appointmentsApi, authApi, onSessionExpired, profileApi, setCsrfToken } from '../api';
+import type { AppointmentSummary, Profile, PublicProfessional, SessionData, User } from '../models/types';
 import type { Page } from './navigation';
 
 /**
@@ -14,14 +14,18 @@ export function useAppViewModel() {
   const [notice, setNotice] = useState('');
   const [pending, setPending] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [professionals, setProfessionals] = useState<PublicProfessional[]>([]);
+  const [summary, setSummary] = useState<AppointmentSummary | null>(null);
+  const [dataVersion, setDataVersion] = useState(0);
   const [selectedProfessional, setSelectedProfessional] = useState<PublicProfessional | null>(null);
   const pendingRef = useRef(false);
+  const sessionEpoch = useRef(0);
 
   const isProfessional = user?.role === 'PROFESSIONAL';
 
   const startSession = useCallback((session: SessionData) => {
+    sessionEpoch.current += 1;
+    setProfile(null);
+    setSummary(null);
     setCsrfToken(session.csrf);
     setUser(session.user);
     setPage('dashboard');
@@ -29,25 +33,27 @@ export function useAppViewModel() {
   }, []);
 
   const endSession = useCallback(() => {
+    sessionEpoch.current += 1;
     setCsrfToken('');
     setUser(null);
     setProfile(null);
-    setAppointments([]);
+    setSummary(null);
     setSelectedProfessional(null);
     setPage('login');
   }, []);
 
-  /** Recarga perfil, turnos y profesionales (después de cada cambio). */
+  /** Recarga perfil y resumen. Invalida los listados después de cada cambio. */
   const refresh = useCallback(async () => {
-    const [nextProfile, nextAppointments, nextProfessionals] = await Promise.all([
+    const epoch = sessionEpoch.current;
+    const [nextProfile, nextSummary] = await Promise.all([
       profileApi.get(),
-      appointmentsApi.listMine(),
-      professionalsApi.list(),
+      appointmentsApi.summary(),
     ]);
+    if (epoch !== sessionEpoch.current) return;
     setProfile(nextProfile);
     setUser(nextProfile);
-    setAppointments(nextAppointments);
-    setProfessionals(nextProfessionals);
+    setSummary(nextSummary);
+    setDataVersion((version) => version + 1);
   }, []);
 
   // Al abrir la app: ¿hay una sesión activa?
@@ -59,10 +65,9 @@ export function useAppViewModel() {
     });
   }, [startSession, endSession]);
 
-  // Con sesión: datos completos. Sin sesión: solo el listado público.
+  // Los datos privados solo se cargan con sesión. Cada listado carga su propia página.
   useEffect(() => {
     if (user) refresh().catch((e: Error) => setNotice(e.message));
-    else professionalsApi.list().then(setProfessionals).catch((e: Error) => setNotice(e.message));
   }, [user?.id, refresh]);
 
   // Al cambiar de pantalla se limpia el aviso.
@@ -102,7 +107,7 @@ export function useAppViewModel() {
 
   return {
     user, loading, page, setPage, notice, setNotice, pending, isProfessional,
-    profile, appointments, professionals, selectedProfessional, setSelectedProfessional,
+    profile, summary, dataVersion, selectedProfessional, setSelectedProfessional,
     startSession, endSession, run, mutate, logout,
   };
 }

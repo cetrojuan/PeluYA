@@ -1031,6 +1031,16 @@ footer {
   }
 }
 
+.pagination {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:14px;
+  margin:24px 0;
+}
+.pagination span { text-align:center; }
+
 @media(prefers-reduced-motion:reduce) {
   *,*:before,*:after {
     animation:none!important;

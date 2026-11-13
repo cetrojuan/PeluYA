@@ -1,4 +1,7 @@
 import express, { Router } from 'express';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { env } from '@/config/env.js';
 import { applySecurity } from '@/middlewares/security.js';
 import { errorHandler, notFoundHandler } from '@/middlewares/error.js';
 import { authRouter } from '@/modules/auth/auth.routes.js';
@@ -12,6 +15,7 @@ import { appointmentsRouter } from '@/modules/appointments/appointments.routes.j
 export const API_VERSION = '1.0.0';
 
 export const app = express();
+app.set('trust proxy', env.TRUST_PROXY);
 applySecurity(app);
 
 const v1 = Router();
@@ -27,6 +31,13 @@ v1.use('/appointments', appointmentsRouter);
 app.use('/api/v1', v1);
 // Alias sin versión para el front actual. Cuando el front use /api/v1, se puede quitar.
 app.use('/api', v1);
+
+// En producción, front y API comparten dominio: la cookie no necesita CORS.
+if (env.isProduction) {
+  const webRoot = fileURLToPath(new URL('../../../frontend/dist/', import.meta.url));
+  if (!existsSync(webRoot + 'index.html')) throw new Error('Falta compilar el frontend antes de iniciar producción.');
+  app.use(express.static(webRoot));
+}
 
 app.use(notFoundHandler);
 app.use(errorHandler);

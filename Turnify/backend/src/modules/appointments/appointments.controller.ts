@@ -1,10 +1,14 @@
 import type { Request, Response } from 'express';
 import { idParam } from '@/lib/validation.js';
-import { createAppointmentSchema, rescheduleSchema, slotsQuerySchema, updateStatusSchema } from './appointments.schemas.js';
+import { createAppointmentSchema, listAppointmentsSchema, rescheduleSchema, slotsQuerySchema, updateStatusSchema } from './appointments.schemas.js';
 import * as appointmentsService from './appointments.service.js';
 
 export async function listMine(req: Request, res: Response) {
-  res.json(await appointmentsService.listMine(req.user!));
+  res.json(await appointmentsService.listMine(req.user!, listAppointmentsSchema.parse(req.query)));
+}
+
+export async function summary(req: Request, res: Response) {
+  res.json(await appointmentsService.summary(req.user!));
 }
 
 export async function create(req: Request, res: Response) {

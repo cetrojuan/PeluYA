@@ -8,6 +8,7 @@ const schema = z.object({
   PORT: z.coerce.number().int().positive().default(4000),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   APP_TIMEZONE: z.string().default('America/Argentina/Buenos_Aires'),
+  TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(0),
 });
 
 const parsed = schema.safeParse(process.env);

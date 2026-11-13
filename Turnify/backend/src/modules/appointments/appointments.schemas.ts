@@ -1,5 +1,12 @@
 import { z } from 'zod';
 import { isoDate, reminder, text, time } from '@/lib/validation.js';
+import { paginationShape } from '@/lib/pagination.js';
+
+export const listAppointmentsSchema = z.object({
+  ...paginationShape,
+  status: z.enum(['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED']).optional(),
+}).strict();
+export type ListAppointmentsQuery = z.infer<typeof listAppointmentsSchema>;
 
 export const createAppointmentSchema = z
   .object({

@@ -1,21 +1,20 @@
-import { firstName, isActive, isUpcoming } from '../utils/format';
+import { firstName } from '../utils/format';
 import { useApp } from './AppContext';
 
 export function useDashboardViewModel() {
-  const { user, profile, appointments, isProfessional, setPage } = useApp();
-  const upcoming = appointments.filter(isUpcoming);
+  const { user, profile, summary, isProfessional, setPage } = useApp();
 
   return {
     isProfessional,
     greetingName: firstName(user?.name ?? ''),
     stats: {
-      active: appointments.filter(isActive).length,
-      pending: appointments.filter((a) => a.status === 'PENDING').length,
+      active: summary?.active ?? 0,
+      pending: summary?.pending ?? 0,
       third: isProfessional
         ? (profile?.professional?.services.length ?? 0)
-        : appointments.filter((a) => a.status === 'COMPLETED').length,
+        : (summary?.completed ?? 0),
     },
-    upcoming: upcoming.slice(0, 4),
+    upcoming: summary?.upcoming ?? [],
     goTo: setPage,
   };
 }

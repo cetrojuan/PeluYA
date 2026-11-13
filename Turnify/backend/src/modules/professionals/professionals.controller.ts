@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
-import { businessSchema } from './professionals.schemas.js';
+import { businessSchema, listProfessionalsSchema } from './professionals.schemas.js';
 import * as professionalsService from './professionals.service.js';
 
-export async function list(_req: Request, res: Response) {
-  res.json(await professionalsService.listPublic());
+export async function list(req: Request, res: Response) {
+  res.json(await professionalsService.listPublic(listProfessionalsSchema.parse(req.query)));
 }
 
 export async function updateMyBusiness(req: Request, res: Response) {
