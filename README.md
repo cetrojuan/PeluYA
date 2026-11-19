@@ -10,7 +10,7 @@ Proyecto integrador de la tecnicatura. El código está en la carpeta [`Turnify/
 | --- | --- |
 | Front | React 19 + TypeScript + Vite |
 | Back | Node.js + Express 5 + TypeScript |
-| Base de datos | PostgreSQL + Prisma |
+| Base de datos | PostgreSQL + Prisma / Migrada a Supabase
 | Validación | Zod |
 | Seguridad | Sesión en cookie httpOnly, CSRF, rate limit, Helmet, bcrypt |
 
